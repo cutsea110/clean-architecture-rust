@@ -36,7 +36,7 @@ fn main() {
     dbg!(user);
 }
  */
-
+/*
 // ref.) https://keens.github.io/blog/2017/12/01/rustnodi/
 // naive implementation
 trait UserDao {
@@ -80,4 +80,90 @@ fn main() {
     let service = UserService::<UserPgDao>(dao);
     let user = service.get_user_by_id(101);
     dbg!(user);
+}
+ */
+
+// ref.) https://keens.github.io/blog/2017/12/01/rustnodi/
+// cake pattern
+pub trait UserDao {
+    type FindRequest;
+    type FindResponse;
+    fn find_user(&self, req: Self::FindRequest) -> Self::FindResponse;
+}
+pub trait HaveUserDao {
+    type UserDao: UserDao;
+    fn user_dao(&self) -> Self::UserDao;
+}
+
+pub trait UserService: HaveUserDao {
+    fn get_user_by_id(
+        &self,
+        req: <<Self as HaveUserDao>::UserDao as UserDao>::FindRequest,
+    ) -> <<Self as HaveUserDao>::UserDao as UserDao>::FindResponse {
+        self.user_dao().find_user(req)
+    }
+}
+
+impl<T: HaveUserDao> UserService for T {}
+
+pub trait HaveUserService {
+    type UserService: UserService;
+    fn user_service(&self) -> Self::UserService;
+}
+
+#[derive(Copy, Clone)]
+struct Server {
+    pub user_dao: UserPgDao,
+}
+impl HaveUserDao for Server {
+    type UserDao = UserPgDao;
+    fn user_dao(&self) -> UserPgDao {
+        self.user_dao
+    }
+}
+impl HaveUserService for Server {
+    type UserService = Self;
+    fn user_service(&self) -> Server {
+        *self
+    }
+}
+
+#[derive(Copy, Clone)]
+struct PgConnection;
+
+#[derive(Copy, Clone)]
+struct UserPgDao(PgConnection);
+
+impl UserDao for UserPgDao {
+    type FindRequest = u32;
+    type FindResponse = Option<User>;
+    fn find_user(&self, key: u32) -> Option<User> {
+        match key {
+            1..=100 => None,
+            _ => Some(User {
+                id: key,
+                name: String::from(format!("name {}", key)),
+            }),
+        }
+    }
+}
+impl HaveUserDao for UserPgDao {
+    type UserDao = Self;
+    fn user_dao(&self) -> Self::UserDao {
+        let con = PgConnection;
+        UserPgDao(con)
+    }
+}
+
+#[derive(Debug)]
+struct User {
+    pub id: u32,
+    pub name: String,
+}
+
+fn main() {
+    let con = PgConnection;
+    let user_dao = UserPgDao(con);
+    let user = user_dao.find_user(101);
+    println!("{:?}", user);
 }
