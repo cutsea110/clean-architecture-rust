@@ -54,97 +54,98 @@ mod group {
     }
 }
 
-mod user_impl {
-    use crate::user::*;
+mod concrete {
+    pub mod user {
+        use crate::user::*;
 
-    #[derive(Copy, Clone)]
-    struct PgConnection;
+        #[derive(Copy, Clone)]
+        struct PgConnection;
 
-    #[derive(Copy, Clone)]
-    pub struct UserPgDao(PgConnection);
+        #[derive(Copy, Clone)]
+        pub struct UserPgDao(PgConnection);
 
-    impl UserPgDao {
-        pub fn new() -> Self {
-            UserPgDao(PgConnection)
-        }
-    }
-
-    impl UserDao for UserPgDao {
-        type FindRequest = u32;
-        type FindResponse = Option<User>;
-        fn find_user(&self, key: u32) -> Option<User> {
-            match key {
-                1..=100 => None,
-                _ => Some(User {
-                    id: key,
-                    name: String::from(format!("user name {}", key)),
-                }),
+        impl UserPgDao {
+            pub fn new() -> Self {
+                UserPgDao(PgConnection)
             }
         }
-    }
-    impl HaveUserDao for UserPgDao {
-        type UserDao = Self;
-        fn user_dao(&self) -> Self::UserDao {
-            let con = PgConnection;
-            UserPgDao(con)
-        }
-    }
 
-    #[derive(Debug)]
-    pub struct User {
-        pub id: u32,
-        pub name: String,
-    }
-}
-
-mod group_impl {
-    use crate::group::*;
-
-    #[derive(Copy, Clone)]
-    struct PgConnection;
-
-    #[derive(Copy, Clone)]
-    pub struct GroupPgDao(PgConnection);
-
-    impl GroupPgDao {
-        pub fn new() -> Self {
-            GroupPgDao(PgConnection)
-        }
-    }
-
-    impl GroupDao for GroupPgDao {
-        type FindRequest = u32;
-        type FindResponse = Option<Group>;
-        fn find_group(&self, key: u32) -> Option<Group> {
-            match key {
-                1..=10 => None,
-                _ => Some(Group {
-                    id: key,
-                    name: String::from(format!("group name {}", key)),
-                }),
+        impl UserDao for UserPgDao {
+            type FindRequest = u32;
+            type FindResponse = Option<User>;
+            fn find_user(&self, key: u32) -> Option<User> {
+                match key {
+                    1..=100 => None,
+                    _ => Some(User {
+                        id: key,
+                        name: String::from(format!("user name {}", key)),
+                    }),
+                }
             }
         }
-    }
-    impl HaveGroupDao for GroupPgDao {
-        type GroupDao = Self;
-        fn group_dao(&self) -> Self::GroupDao {
-            let con = PgConnection;
-            GroupPgDao(con)
+        impl HaveUserDao for UserPgDao {
+            type UserDao = Self;
+            fn user_dao(&self) -> Self::UserDao {
+                let con = PgConnection;
+                UserPgDao(con)
+            }
+        }
+
+        #[derive(Debug)]
+        pub struct User {
+            pub id: u32,
+            pub name: String,
         }
     }
 
-    #[derive(Debug)]
-    pub struct Group {
-        pub id: u32,
-        pub name: String,
+    pub mod group {
+        use crate::group::*;
+
+        #[derive(Copy, Clone)]
+        struct PgConnection;
+
+        #[derive(Copy, Clone)]
+        pub struct GroupPgDao(PgConnection);
+
+        impl GroupPgDao {
+            pub fn new() -> Self {
+                GroupPgDao(PgConnection)
+            }
+        }
+
+        impl GroupDao for GroupPgDao {
+            type FindRequest = u32;
+            type FindResponse = Option<Group>;
+            fn find_group(&self, key: u32) -> Option<Group> {
+                match key {
+                    1..=10 => None,
+                    _ => Some(Group {
+                        id: key,
+                        name: String::from(format!("group name {}", key)),
+                    }),
+                }
+            }
+        }
+        impl HaveGroupDao for GroupPgDao {
+            type GroupDao = Self;
+            fn group_dao(&self) -> Self::GroupDao {
+                let con = PgConnection;
+                GroupPgDao(con)
+            }
+        }
+
+        #[derive(Debug)]
+        pub struct Group {
+            pub id: u32,
+            pub name: String,
+        }
     }
 }
 
 mod server {
-    use super::group::*;
-    use super::group_impl::*;
-    use super::user::*;
-    use super::user_impl::*;
+    pub use super::concrete::{group::*, user::*};
+    pub use super::group::*;
+    pub use super::user::*;
 
     #[derive(Copy, Clone)]
     pub struct Server {
@@ -177,11 +178,7 @@ mod server {
     }
 }
 
-use group::*;
-use group_impl::*;
 use server::*;
-use user::*;
-use user_impl::*;
 
 fn main() {
     let server = Server {
