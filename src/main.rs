@@ -86,62 +86,13 @@ fn main() {
 // ref.) https://keens.github.io/blog/2017/12/01/rustnodi/
 // cake pattern
 
-// User
-pub trait UserDao {
-    type FindRequest;
-    type FindResponse;
-    fn find_user(&self, req: Self::FindRequest) -> Self::FindResponse;
-}
-pub trait HaveUserDao {
-    type UserDao: UserDao;
-    fn user_dao(&self) -> Self::UserDao;
-}
-
-pub trait UserService: HaveUserDao {
-    fn get_user_by_id(
-        &self,
-        req: <<Self as HaveUserDao>::UserDao as UserDao>::FindRequest,
-    ) -> <<Self as HaveUserDao>::UserDao as UserDao>::FindResponse {
-        self.user_dao().find_user(req)
-    }
-}
-
-impl<T: HaveUserDao> UserService for T {}
-
-pub trait HaveUserService {
-    type UserService: UserService;
-    fn user_service(&self) -> Self::UserService;
-}
-
-// Group
-
-pub trait GroupDao {
-    type FindRequest;
-    type FindResponse;
-    fn find_group(&self, req: Self::FindRequest) -> Self::FindResponse;
-}
-pub trait HaveGroupDao {
-    type GroupDao: GroupDao;
-    fn group_dao(&self) -> Self::GroupDao;
-}
-
-pub trait GroupService: HaveGroupDao {
-    fn get_group_by_id(
-        &self,
-        req: <<Self as HaveGroupDao>::GroupDao as GroupDao>::FindRequest,
-    ) -> <<Self as HaveGroupDao>::GroupDao as GroupDao>::FindResponse {
-        self.group_dao().find_group(req)
-    }
-}
-
-impl<T: HaveGroupDao> GroupService for T {}
-
-pub trait HaveGroupService {
-    type GroupService: GroupService;
-    fn group_service(&self) -> Self::GroupService;
-}
-
 // Impl
+
+mod group;
+mod user;
+
+use group::*;
+use user::*;
 
 #[derive(Copy, Clone)]
 struct PgConnection;
