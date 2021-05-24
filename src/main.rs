@@ -143,14 +143,22 @@ mod concrete {
 }
 
 mod server {
-    pub use super::concrete::{group::*, user::*};
-    pub use super::group::*;
-    pub use super::user::*;
+    pub use super::concrete::{group::GroupPgDao, user::UserPgDao};
+    pub use super::group::{GroupDao, HaveGroupDao, HaveGroupService};
+    pub use super::user::{HaveUserDao, HaveUserService, UserDao};
 
     #[derive(Copy, Clone)]
     pub struct Server {
         pub user_dao: UserPgDao,
         pub group_dao: GroupPgDao,
+    }
+    impl Server {
+        pub fn new() -> Self {
+            Server {
+                user_dao: UserPgDao::new(),
+                group_dao: GroupPgDao::new(),
+            }
+        }
     }
     impl HaveUserDao for Server {
         type UserDao = UserPgDao;
@@ -181,10 +189,7 @@ mod server {
 use server::*;
 
 fn main() {
-    let server = Server {
-        user_dao: UserPgDao::new(),
-        group_dao: GroupPgDao::new(),
-    };
+    let server = Server::new();
 
     let user = server.user_dao.find_user(101);
     println!("{:?}", user);
