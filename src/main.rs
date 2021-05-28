@@ -155,22 +155,10 @@ mod server {
             self.user_dao
         }
     }
-    impl HaveUserService for Server {
-        type UserService = Self;
-        fn user_service(&self) -> Server {
-            *self
-        }
-    }
     impl HaveGroupDao for Server {
         type GroupDao = GroupPgDao;
         fn group_dao(&self) -> GroupPgDao {
             self.group_dao
-        }
-    }
-    impl HaveGroupService for Server {
-        type GroupService = Self;
-        fn group_service(&self) -> Server {
-            *self
         }
     }
 }
