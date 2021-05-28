@@ -83,13 +83,6 @@ mod concrete {
                 }
             }
         }
-        impl HaveUserDao for UserPgDao {
-            type UserDao = Self;
-            fn user_dao(&self) -> Self::UserDao {
-                let con = PgConnection;
-                UserPgDao(con)
-            }
-        }
 
         #[derive(Debug)]
         pub struct User {
@@ -124,13 +117,6 @@ mod concrete {
                         name: String::from(format!("group name {}", key)),
                     }),
                 }
-            }
-        }
-        impl HaveGroupDao for GroupPgDao {
-            type GroupDao = Self;
-            fn group_dao(&self) -> Self::GroupDao {
-                let con = PgConnection;
-                GroupPgDao(con)
             }
         }
 
