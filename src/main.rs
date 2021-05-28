@@ -55,7 +55,21 @@ mod group {
 }
 
 mod concrete {
+    pub mod models {
+        #[derive(Debug)]
+        pub struct User {
+            pub id: u32,
+            pub name: String,
+        }
+        #[derive(Debug)]
+        pub struct Group {
+            pub id: u32,
+            pub name: String,
+        }
+    }
+
     pub mod user {
+        use super::models::User;
         use crate::user::*;
 
         #[derive(Copy, Clone)]
@@ -83,15 +97,10 @@ mod concrete {
                 }
             }
         }
-
-        #[derive(Debug)]
-        pub struct User {
-            pub id: u32,
-            pub name: String,
-        }
     }
 
     pub mod group {
+        use super::models::Group;
         use crate::group::*;
 
         #[derive(Copy, Clone)]
@@ -118,12 +127,6 @@ mod concrete {
                     }),
                 }
             }
-        }
-
-        #[derive(Debug)]
-        pub struct Group {
-            pub id: u32,
-            pub name: String,
         }
     }
 }
