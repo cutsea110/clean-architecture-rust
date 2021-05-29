@@ -1,60 +1,75 @@
-mod user {
-    pub trait UserDao {
-        type FindRequest;
-        type FindResponse;
-        fn find_user(&self, req: Self::FindRequest) -> Self::FindResponse;
-    }
-    pub trait HaveUserDao {
-        type UserDao: UserDao;
-        fn user_dao(&self) -> Self::UserDao;
-    }
+mod dao {
+    pub mod user {
 
-    pub trait UserService: HaveUserDao {
-        fn get_user_by_id(
-            &self,
-            req: <<Self as HaveUserDao>::UserDao as UserDao>::FindRequest,
-        ) -> <<Self as HaveUserDao>::UserDao as UserDao>::FindResponse {
-            self.user_dao().find_user(req)
+        pub trait UserDao {
+            type FindRequest;
+            type FindResponse;
+            fn find_user(&self, req: Self::FindRequest) -> Self::FindResponse;
+        }
+
+        pub trait HaveUserDao {
+            type UserDao: UserDao;
+            fn user_dao(&self) -> Self::UserDao;
         }
     }
+    pub mod group {
 
-    impl<T: HaveUserDao> UserService for T {}
+        pub trait GroupDao {
+            type FindRequest;
+            type FindResponse;
+            fn find_group(&self, req: Self::FindRequest) -> Self::FindResponse;
+        }
 
-    pub trait HaveUserService {
-        type UserService: UserService;
-        fn user_service(&self) -> Self::UserService;
+        pub trait HaveGroupDao {
+            type GroupDao: GroupDao;
+            fn group_dao(&self) -> Self::GroupDao;
+        }
     }
 }
 
-mod group {
-    pub trait GroupDao {
-        type FindRequest;
-        type FindResponse;
-        fn find_group(&self, req: Self::FindRequest) -> Self::FindResponse;
-    }
-    pub trait HaveGroupDao {
-        type GroupDao: GroupDao;
-        fn group_dao(&self) -> Self::GroupDao;
-    }
+mod service {
+    pub mod user {
+        use super::super::dao::user::{HaveUserDao, UserDao};
 
-    pub trait GroupService: HaveGroupDao {
-        fn get_group_by_id(
-            &self,
-            req: <<Self as HaveGroupDao>::GroupDao as GroupDao>::FindRequest,
-        ) -> <<Self as HaveGroupDao>::GroupDao as GroupDao>::FindResponse {
-            self.group_dao().find_group(req)
+        pub trait UserService: HaveUserDao {
+            fn get_user_by_id(
+                &self,
+                req: <<Self as HaveUserDao>::UserDao as UserDao>::FindRequest,
+            ) -> <<Self as HaveUserDao>::UserDao as UserDao>::FindResponse {
+                self.user_dao().find_user(req)
+            }
+        }
+
+        impl<T: HaveUserDao> UserService for T {}
+
+        pub trait HaveUserService {
+            type UserService: UserService;
+            fn user_service(&self) -> Self::UserService;
         }
     }
 
-    impl<T: HaveGroupDao> GroupService for T {}
+    pub mod group {
+        use super::super::dao::group::{GroupDao, HaveGroupDao};
 
-    pub trait HaveGroupService {
-        type GroupService: GroupService;
-        fn group_service(&self) -> Self::GroupService;
+        pub trait GroupService: HaveGroupDao {
+            fn get_group_by_id(
+                &self,
+                req: <<Self as HaveGroupDao>::GroupDao as GroupDao>::FindRequest,
+            ) -> <<Self as HaveGroupDao>::GroupDao as GroupDao>::FindResponse {
+                self.group_dao().find_group(req)
+            }
+        }
+
+        impl<T: HaveGroupDao> GroupService for T {}
+
+        pub trait HaveGroupService {
+            type GroupService: GroupService;
+            fn group_service(&self) -> Self::GroupService;
+        }
     }
 }
 
-mod concrete {
+mod pgdao {
     pub mod models {
         #[derive(Debug)]
         pub struct User {
@@ -70,7 +85,7 @@ mod concrete {
 
     pub mod user {
         use super::models::User;
-        use crate::user::*;
+        use crate::dao::user::UserDao;
 
         #[derive(Copy, Clone)]
         struct PgConnection;
@@ -101,7 +116,7 @@ mod concrete {
 
     pub mod group {
         use super::models::Group;
-        use crate::group::*;
+        use crate::dao::group::GroupDao;
 
         #[derive(Copy, Clone)]
         struct PgConnection;
@@ -131,16 +146,18 @@ mod concrete {
     }
 }
 
-mod server {
-    pub use super::concrete::{group::GroupPgDao, user::UserPgDao};
-    pub use super::group::{GroupDao, HaveGroupDao, HaveGroupService};
-    pub use super::user::{HaveUserDao, HaveUserService, UserDao};
+mod cli {
+    pub use super::dao::group::{GroupDao, HaveGroupDao};
+    pub use super::dao::user::{HaveUserDao, UserDao};
+
+    pub use super::pgdao::{group::GroupPgDao, user::UserPgDao};
 
     #[derive(Copy, Clone)]
     pub struct Server {
-        pub user_dao: UserPgDao,
-        pub group_dao: GroupPgDao,
+        user_dao: UserPgDao,
+        group_dao: GroupPgDao,
     }
+
     impl Server {
         pub fn new() -> Self {
             Server {
@@ -149,12 +166,14 @@ mod server {
             }
         }
     }
+
     impl HaveUserDao for Server {
         type UserDao = UserPgDao;
         fn user_dao(&self) -> UserPgDao {
             self.user_dao
         }
     }
+
     impl HaveGroupDao for Server {
         type GroupDao = GroupPgDao;
         fn group_dao(&self) -> GroupPgDao {
@@ -163,13 +182,17 @@ mod server {
     }
 }
 
-use server::*;
+// main
+
+use cli::Server;
+use service::group::GroupService;
+use service::user::UserService;
 
 fn main() {
-    let server = Server::new();
+    let cli = Server::new();
 
-    let user = server.user_dao.find_user(101);
+    let user = cli.get_user_by_id(101);
     println!("{:?}", user);
-    let group = server.group_dao.find_group(21);
+    let group = cli.get_group_by_id(21);
     println!("{:?}", group);
 }
