@@ -153,28 +153,28 @@ mod cli {
     pub use super::pgdao::{group::GroupPgDao, user::UserPgDao};
 
     #[derive(Copy, Clone)]
-    pub struct Server {
+    pub struct Cli {
         user_dao: UserPgDao,
         group_dao: GroupPgDao,
     }
 
-    impl Server {
+    impl Cli {
         pub fn new() -> Self {
-            Server {
+            Cli {
                 user_dao: UserPgDao::new(),
                 group_dao: GroupPgDao::new(),
             }
         }
     }
 
-    impl HaveUserDao for Server {
+    impl HaveUserDao for Cli {
         type UserDao = UserPgDao;
         fn user_dao(&self) -> UserPgDao {
             self.user_dao
         }
     }
 
-    impl HaveGroupDao for Server {
+    impl HaveGroupDao for Cli {
         type GroupDao = GroupPgDao;
         fn group_dao(&self) -> GroupPgDao {
             self.group_dao
@@ -184,12 +184,12 @@ mod cli {
 
 // main
 
-use cli::Server;
+use cli::Cli;
 use service::group::GroupService;
 use service::user::UserService;
 
 fn main() {
-    let cli = Server::new();
+    let cli = Cli::new();
 
     let user = cli.get_user_by_id(101);
     println!("{:?}", user);
