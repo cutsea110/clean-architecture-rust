@@ -42,10 +42,12 @@ mod service {
 
         impl<T: HaveUserDao> UserService for T {}
 
-        pub trait HaveUserService {
-            type UserService: UserService;
-            fn user_service(&self) -> Self::UserService;
-        }
+        /* // 不要?
+                pub trait HaveUserService {
+                    type UserService: UserService;
+                    fn user_service(&self) -> Self::UserService;
+                }
+        */
     }
 
     pub mod group {
@@ -62,10 +64,12 @@ mod service {
 
         impl<T: HaveGroupDao> GroupService for T {}
 
-        pub trait HaveGroupService {
-            type GroupService: GroupService;
-            fn group_service(&self) -> Self::GroupService;
-        }
+        /* // 不要?
+                pub trait HaveGroupService {
+                    type GroupService: GroupService;
+                    fn group_service(&self) -> Self::GroupService;
+                }
+        */
     }
 }
 
